@@ -1,4 +1,4 @@
-.PHONY: help install dev clean test test-cov lint format run migrate migration-create migration-amend migration-downgrade migration-history db-upgrade db-downgrade db-current docker-up docker-down docker-logs
+.PHONY: help install dev clean test test-cov lint format run dev-up dev-down dev-logs dev-status migrate migration-create migration-amend migration-downgrade migration-history db-upgrade db-downgrade db-current docker-up docker-down docker-logs
 
 # Variables
 VENV := ../venv
@@ -20,8 +20,14 @@ help:
 	@echo "  make dev              - Install dev dependencies"
 	@echo "  make clean            - Clean Python cache files"
 	@echo ""
-	@echo "Development Commands:"
-	@echo "  make run              - Run the FastAPI server"
+	@echo "Local Development Commands:"
+	@echo "  make dev-up           - Start PostgreSQL & Redis (for local development)"
+	@echo "  make dev-down         - Stop PostgreSQL & Redis"
+	@echo "  make dev-logs         - View database logs"
+	@echo "  make dev-status       - Check if services are running"
+	@echo "  make run              - Run the FastAPI server locally (with hot reload)"
+	@echo ""
+	@echo "Testing & Quality Commands:"
 	@echo "  make test             - Run tests"
 	@echo "  make test-cov         - Run tests with coverage"
 	@echo "  make lint             - Run flake8 linter"
@@ -110,12 +116,37 @@ db-current:
 migration-history:
 	$(ALEMBIC) history --verbose
 
-# Docker commands
+# Local development commands (run DB in Docker, backend on host)
+dev-up:
+	@echo "Starting PostgreSQL and Redis for local development..."
+	cd .. && docker-compose -f docker-compose.dev.yml up -d
+	@echo ""
+	@echo "✓ Services started!"
+	@echo "  PostgreSQL: localhost:5433"
+	@echo "  Redis: localhost:6379"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Run migrations: make db-upgrade"
+	@echo "  2. Start the backend: make run"
+	@echo "  3. Or debug in VSCode: Press F5"
+
+dev-down:
+	@echo "Stopping PostgreSQL and Redis..."
+	cd .. && docker-compose -f docker-compose.dev.yml down
+
+dev-logs:
+	cd .. && docker-compose -f docker-compose.dev.yml logs -f
+
+dev-status:
+	@echo "Checking service status..."
+	@cd .. && docker-compose -f docker-compose.dev.yml ps
+
+# Docker commands (full stack)
 docker-up:
-	docker-compose up -d
+	cd .. && docker-compose up -d
 
 docker-down:
-	docker-compose down
+	cd .. && docker-compose down
 
 docker-logs:
-	docker-compose logs -f
+	cd .. && docker-compose logs -f

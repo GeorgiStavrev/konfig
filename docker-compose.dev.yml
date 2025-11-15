@@ -1,0 +1,44 @@
+# Docker Compose for Local Development
+# This file runs only the database and cache services.
+# Run the backend locally for hot-reload and debugging.
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: konfig-postgres
+    environment:
+      POSTGRES_USER: konfig
+      POSTGRES_PASSWORD: konfig123
+      POSTGRES_DB: konfig
+    ports:
+      - "5433:5432"  # Exposed on 5433 to avoid conflicts with local PostgreSQL
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U konfig"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: konfig-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: konfig-network
