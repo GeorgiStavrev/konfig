@@ -1,0 +1,573 @@
+{
+	"info": {
+		"_postman_id": "konfig-api-v2-collection",
+		"name": "Konfig API v2 (User & API Key Auth)",
+		"description": "Complete API collection for Konfig - Configuration as a Service\n\n**New Authentication Model:**\n- Tenants are organizations (no direct auth)\n- Users belong to tenants (with roles: owner, admin, member)\n- API Keys for service-to-service authentication\n\n**Workflow:**\n1. Register (creates tenant + owner user) → Saves access token\n2. Create namespaces and configs (as user)\n3. Optionally create API key for service access\n4. Add more users to your tenant (admins/members)\n\n**Authentication Methods:**\n- User Auth: Bearer token in Authorization header\n- API Key Auth: X-API-Key header",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register (Create Tenant + Owner User)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"access_token\", jsonData.access_token);",
+									"    pm.environment.set(\"refresh_token\", jsonData.refresh_token);",
+									"    pm.environment.set(\"user_id\", jsonData.user.id);",
+									"    pm.environment.set(\"user_email\", jsonData.user.email);",
+									"    pm.environment.set(\"tenant_id\", jsonData.tenant_id);",
+									"    pm.environment.set(\"tenant_name\", jsonData.tenant_name);",
+									"    console.log(\"Registration successful!\");",
+									"    console.log(\"Tenant: \" + jsonData.tenant_name);",
+									"    console.log(\"User: \" + jsonData.user.email + \" (\" + jsonData.user.role + \")\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenant_name\": \"{{tenant_name}}\",\n    \"email\": \"{{owner_email}}\",\n    \"password\": \"{{owner_password}}\",\n    \"full_name\": \"{{owner_full_name}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						},
+						"description": "Register a new tenant with an owner user.\nCreates both the organization (tenant) and the first user (owner role).\nAutomatically saves access token and user info."
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"access_token\", jsonData.access_token);",
+									"    pm.environment.set(\"refresh_token\", jsonData.refresh_token);",
+									"    pm.environment.set(\"user_id\", jsonData.user.id);",
+									"    pm.environment.set(\"tenant_id\", jsonData.tenant_id);",
+									"    console.log(\"Login successful!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{owner_email}}\",\n    \"password\": \"{{owner_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Login with user credentials.\nReturns access token and user/tenant information."
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users"]
+						},
+						"description": "List all users in your tenant"
+					}
+				},
+				{
+					"name": "Create User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"new_user_id\", jsonData.id);",
+									"    console.log(\"User created: \" + jsonData.email);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"SecurePassword123!\",\n    \"full_name\": \"Admin User\",\n    \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users"]
+						},
+						"description": "Create a new user in your tenant.\nRequires ADMIN or OWNER role.\n\nRoles:\n- owner: Full access, can delete tenant\n- admin: Can manage users and resources\n- member: Can manage namespaces and configs"
+					}
+				},
+				{
+					"name": "Get User",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "{{user_id}}"]
+						},
+						"description": "Get details of a specific user"
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"full_name\": \"Updated Name\",\n    \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/{{new_user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "{{new_user_id}}"]
+						},
+						"description": "Update a user.\n- Users can update their own profile (name, password)\n- Admins can update any user\n- Only owners can change roles or activate/deactivate users"
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/{{new_user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "{{new_user_id}}"]
+						},
+						"description": "Delete a user from the tenant.\nRequires OWNER role.\nCannot delete yourself or the last owner."
+					}
+				}
+			]
+		},
+		{
+			"name": "API Keys",
+			"item": [
+				{
+					"name": "List API Keys",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/api-keys",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "api-keys"]
+						},
+						"description": "List all API keys for your tenant.\nRequires ADMIN or OWNER role."
+					}
+				},
+				{
+					"name": "Create API Key",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"api_key\", jsonData.api_key);",
+									"    pm.environment.set(\"api_key_id\", jsonData.id);",
+									"    console.log(\"API Key created!\");",
+									"    console.log(\"⚠️  SAVE THIS KEY - it won't be shown again!\");",
+									"    console.log(\"API Key: \" + jsonData.api_key);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Production Service\",\n    \"scopes\": \"read,write\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/api-keys",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "api-keys"]
+						},
+						"description": "Create a new API key for service-to-service authentication.\nRequires ADMIN or OWNER role.\n\n⚠️  The full API key is only shown once - save it securely!"
+					}
+				},
+				{
+					"name": "Get API Key",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/api-keys/{{api_key_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "api-keys", "{{api_key_id}}"]
+						},
+						"description": "Get details of a specific API key.\nNote: Full key is not returned, only metadata."
+					}
+				},
+				{
+					"name": "Revoke API Key",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/v1/api-keys/{{api_key_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "api-keys", "{{api_key_id}}"]
+						},
+						"description": "Revoke (delete) an API key.\nRequires ADMIN or OWNER role."
+					}
+				}
+			]
+		},
+		{
+			"name": "Namespaces",
+			"item": [
+				{
+					"name": "List Namespaces",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces"]
+						},
+						"description": "List all namespaces.\nSupports both Bearer token and X-API-Key authentication."
+					}
+				},
+				{
+					"name": "Create Namespace",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"namespace_id\", jsonData.id);",
+									"    console.log(\"Namespace created: \" + jsonData.name);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{namespace_name}}\",\n    \"description\": \"Production environment configurations\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces"]
+						},
+						"description": "Create a new namespace.\nSupports both Bearer token and X-API-Key authentication."
+					}
+				},
+				{
+					"name": "Get Namespace",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Namespace",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"production-v2\",\n    \"description\": \"Updated production environment\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Namespace",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Configurations",
+			"item": [
+				{
+					"name": "List Configs",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}/configs",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}", "configs"]
+						},
+						"description": "List all configurations in a namespace.\nSupports both Bearer token and X-API-Key authentication."
+					}
+				},
+				{
+					"name": "Create Config",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"config_key\", jsonData.key);",
+									"    console.log(\"Config created: \" + jsonData.key);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\": \"api_url\",\n    \"value\": \"https://api.example.com\",\n    \"value_type\": \"string\",\n    \"description\": \"Main API endpoint URL\",\n    \"is_secret\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}/configs",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}", "configs"]
+						},
+						"description": "Create a new configuration.\nValues are automatically encrypted."
+					}
+				},
+				{
+					"name": "Get Config",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}/configs/{{config_key}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}", "configs", "{{config_key}}"]
+						},
+						"description": "Get a specific configuration.\nValues are automatically decrypted."
+					}
+				},
+				{
+					"name": "Update Config",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"value\": \"https://api-v2.example.com\",\n    \"description\": \"Updated API endpoint\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}/configs/{{config_key}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}", "configs", "{{config_key}}"]
+						},
+						"description": "Update a configuration.\nCreates a new version in history."
+					}
+				},
+				{
+					"name": "Delete Config",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}/configs/{{config_key}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}", "configs", "{{config_key}}"]
+						}
+					}
+				},
+				{
+					"name": "Get Config History",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}/configs/{{config_key}}/history",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}", "configs", "{{config_key}}", "history"]
+						},
+						"description": "Get version history for a configuration"
+					}
+				}
+			]
+		},
+		{
+			"name": "Examples with API Key Auth",
+			"item": [
+				{
+					"name": "List Namespaces (API Key)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces"]
+						},
+						"description": "Example: List namespaces using API key authentication"
+					}
+				},
+				{
+					"name": "Get Config (API Key)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/namespaces/{{namespace_id}}/configs/{{config_key}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "namespaces", "{{namespace_id}}", "configs", "{{config_key}}"]
+						},
+						"description": "Example: Fetch configuration using API key (for services)"
+					}
+				}
+			]
+		}
+	]
+}

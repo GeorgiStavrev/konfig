@@ -1,0 +1,81 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: konfig-postgres
+    environment:
+      POSTGRES_USER: konfig
+      POSTGRES_PASSWORD: konfig123
+      POSTGRES_DB: konfig
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U konfig"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: konfig-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: konfig-backend
+    environment:
+      - DATABASE_URL=postgresql://konfig:konfig123@postgres:5432/konfig
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - ENCRYPTION_KEY=dev-encryption-key-change-this
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+      - DEBUG=True
+      - ENVIRONMENT=development
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+    restart: unless-stopped
+
+  # Database migrations (run once)
+  migrations:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: konfig-migrations
+    environment:
+      - DATABASE_URL=postgresql://konfig:konfig123@postgres:5432/konfig
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: alembic upgrade head
+    volumes:
+      - ./backend/alembic:/app/alembic
+      - ./backend/alembic.ini:/app/alembic.ini
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: konfig-network
