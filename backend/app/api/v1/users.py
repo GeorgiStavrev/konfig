@@ -249,7 +249,7 @@ async def delete_user(
         select(User).where(
             User.tenant_id == tenant.id,
             User.role == UserRole.OWNER,
-            User.is_active == "true"
+            User.is_active == True
         )
     )
     active_owners = result.scalars().all()

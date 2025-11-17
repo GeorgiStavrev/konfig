@@ -97,7 +97,7 @@ async def create_api_key(
         "name": new_api_key.name,
         "prefix": new_api_key.prefix,
         "scopes": new_api_key.scopes,
-        "is_active": new_api_key.is_active == "true",
+        "is_active": new_api_key.is_active,
         "last_used_at": new_api_key.last_used_at,
         "expires_at": new_api_key.expires_at,
         "created_at": new_api_key.created_at,

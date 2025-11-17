@@ -5,12 +5,8 @@ from fastapi.testclient import TestClient
 
 def setup_tenant_and_namespace(client: TestClient, tenant_data: dict, namespace_data: dict):
     """Helper to setup tenant and namespace, return token and namespace_id."""
-    # Register and login
-    client.post("/api/v1/auth/register", json=tenant_data)
-    response = client.post("/api/v1/auth/login", json={
-        "email": tenant_data["email"],
-        "password": tenant_data["password"]
-    })
+    # Register (which returns token directly)
+    response = client.post("/api/v1/auth/register", json=tenant_data)
     token = response.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -367,9 +363,10 @@ def test_config_isolation(client: TestClient, test_tenant_data, test_namespace_d
 
     # Create second tenant
     tenant2_data = {
-        "name": "tenant2",
+        "tenant_name": "tenant2",
         "email": "tenant2@example.com",
-        "password": "Password123!"
+        "password": "Password123!",
+        "full_name": "Tenant 2 Owner"
     }
     namespace2_data = {
         "name": "tenant2_namespace",

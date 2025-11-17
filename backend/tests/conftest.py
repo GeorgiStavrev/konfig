@@ -99,6 +99,12 @@ def test_user_registration_data():
 
 
 @pytest.fixture
+def test_tenant_data(test_user_registration_data):
+    """Alias for test_user_registration_data for backward compatibility."""
+    return test_user_registration_data
+
+
+@pytest.fixture
 def test_user_data():
     """Test user data for creating additional users."""
     return {

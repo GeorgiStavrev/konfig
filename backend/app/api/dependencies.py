@@ -130,7 +130,7 @@ async def get_tenant_from_api_key(
 
     # Try to find by prefix first (for optimization)
     result = await db.execute(
-        select(ApiKey).where(ApiKey.prefix == prefix, ApiKey.is_active == "true")
+        select(ApiKey).where(ApiKey.prefix == prefix, ApiKey.is_active == True)
     )
     api_key_obj = result.scalar_one_or_none()
 

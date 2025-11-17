@@ -40,25 +40,19 @@ def wait_for_api():
 def test_tenant(wait_for_api) -> Tuple[Dict, str]:
     """Create a test tenant and return tenant data and access token."""
     tenant_data = {
-        "name": f"e2e_test_company_{int(time.time())}",
+        "tenant_name": f"e2e_test_company_{int(time.time())}",
         "email": f"e2e_test_{int(time.time())}@example.com",
-        "password": "E2ETestPassword123!"
+        "password": "E2ETestPassword123!",
+        "full_name": "E2E Test Owner"
     }
 
     # Register
     response = requests.post(f"{API_BASE}/auth/register", json=tenant_data)
     assert response.status_code == 201, f"Registration failed: {response.text}"
+    registration_response = response.json()
+    access_token = registration_response["access_token"]
 
-    # Login
-    login_data = {
-        "email": tenant_data["email"],
-        "password": tenant_data["password"]
-    }
-    response = requests.post(f"{API_BASE}/auth/login", json=login_data)
-    assert response.status_code == 200, f"Login failed: {response.text}"
-
-    token = response.json()["access_token"]
-    return tenant_data, token
+    return tenant_data, access_token
 
 
 def test_e2e_health_check(wait_for_api):
@@ -75,16 +69,17 @@ def test_e2e_authentication_flow(wait_for_api):
     """Test complete authentication flow."""
     # Register
     tenant_data = {
-        "name": f"auth_test_{int(time.time())}",
+        "tenant_name": f"auth_test_{int(time.time())}",
         "email": f"auth_test_{int(time.time())}@example.com",
-        "password": "TestPassword123!"
+        "password": "TestPassword123!",
+        "full_name": "Auth Test Owner"
     }
 
     response = requests.post(f"{API_BASE}/auth/register", json=tenant_data)
     assert response.status_code == 201
-    registered_tenant = response.json()
-    assert "id" in registered_tenant
-    assert registered_tenant["email"] == tenant_data["email"]
+    registered_response = response.json()
+    assert "access_token" in registered_response
+    assert registered_response["user"]["email"] == tenant_data["email"]
 
     # Login
     login_data = {
@@ -401,17 +396,13 @@ def test_e2e_multi_tenant_isolation(wait_for_api):
     """Test that data is properly isolated between tenants."""
     # Create first tenant
     tenant1_data = {
-        "name": f"tenant1_{int(time.time())}",
+        "tenant_name": f"tenant1_{int(time.time())}",
         "email": f"tenant1_{int(time.time())}@example.com",
-        "password": "Password123!"
+        "password": "Password123!",
+        "full_name": "Tenant 1 Owner"
     }
     response = requests.post(f"{API_BASE}/auth/register", json=tenant1_data)
     assert response.status_code == 201
-
-    response = requests.post(f"{API_BASE}/auth/login", json={
-        "email": tenant1_data["email"],
-        "password": tenant1_data["password"]
-    })
     token1 = response.json()["access_token"]
     headers1 = {"Authorization": f"Bearer {token1}"}
 
@@ -438,17 +429,13 @@ def test_e2e_multi_tenant_isolation(wait_for_api):
 
     # Create second tenant
     tenant2_data = {
-        "name": f"tenant2_{int(time.time())}",
+        "tenant_name": f"tenant2_{int(time.time())}",
         "email": f"tenant2_{int(time.time())}@example.com",
-        "password": "Password123!"
+        "password": "Password123!",
+        "full_name": "Tenant 2 Owner"
     }
     response = requests.post(f"{API_BASE}/auth/register", json=tenant2_data)
     assert response.status_code == 201
-
-    response = requests.post(f"{API_BASE}/auth/login", json={
-        "email": tenant2_data["email"],
-        "password": tenant2_data["password"]
-    })
     token2 = response.json()["access_token"]
     headers2 = {"Authorization": f"Bearer {token2}"}
 
