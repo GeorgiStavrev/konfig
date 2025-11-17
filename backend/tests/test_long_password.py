@@ -1,5 +1,5 @@
 """Test long password handling."""
-import pytest
+
 from app.core.security import get_password_hash, verify_password
 
 

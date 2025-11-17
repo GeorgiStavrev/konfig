@@ -1,19 +1,19 @@
 """API dependencies."""
-import uuid
-import secrets
-from typing import Optional, Union
-from datetime import datetime
-from fastapi import Depends, HTTPException, status, Header
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
+import uuid
+from datetime import datetime
+from typing import Optional
+
+from fastapi import Depends, Header, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.security import decode_token
 from app.db.base import get_db
+from app.models.api_key import ApiKey
 from app.models.tenant import Tenant
 from app.models.user import User, UserRole
-from app.models.api_key import ApiKey
-from app.core.security import decode_token, get_password_hash
-
 
 security = HTTPBearer()
 
@@ -125,12 +125,9 @@ async def get_tenant_from_api_key(
 
     prefix = api_key[:12]
 
-    # Hash the full API key
-    api_key_hash = get_password_hash(api_key)
-
     # Try to find by prefix first (for optimization)
     result = await db.execute(
-        select(ApiKey).where(ApiKey.prefix == prefix, ApiKey.is_active == True)
+        select(ApiKey).where(ApiKey.prefix == prefix, ApiKey.is_active.is_(True))
     )
     api_key_obj = result.scalar_one_or_none()
 
@@ -196,6 +193,7 @@ async def get_tenant_from_user_or_api_key(
 
         # Create a mock credentials object for get_current_user
         from fastapi.security import HTTPAuthorizationCredentials
+
         credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
 
         # Get user and then tenant

@@ -1,17 +1,18 @@
 """Main FastAPI application."""
+
+import logging
+
 from fastapi import Depends, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import logging
-
+from slowapi.util import get_remote_address
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1 import api_keys, auth, configs, namespaces, users
 from app.core.config import settings
-from app.api.v1 import auth, users, api_keys, namespaces, configs
 from app.db.base import get_db
 
 # Configure logging

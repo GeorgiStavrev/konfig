@@ -1,7 +1,9 @@
 """Namespace schemas."""
+
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 
@@ -21,7 +23,9 @@ class NamespaceCreate(NamespaceBase):
 class NamespaceUpdate(BaseModel):
     """Schema for updating a namespace."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=255, pattern="^[a-zA-Z0-9_-]+$")
+    name: Optional[str] = Field(
+        None, min_length=1, max_length=255, pattern="^[a-zA-Z0-9_-]+$"
+    )
     description: Optional[str] = None
 
 

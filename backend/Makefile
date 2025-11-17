@@ -1,4 +1,4 @@
-.PHONY: help install dev clean test test-cov lint format run dev-up dev-down dev-logs dev-status migrate migration-create migration-amend migration-downgrade migration-history db-upgrade db-downgrade db-current docker-up docker-down docker-logs
+.PHONY: help install dev clean test test-cov lint format run dev-up dev-down dev-logs dev-status migrate migration-create migration-amend migration-downgrade migration-history db-upgrade db-downgrade db-current docker-up docker-down docker-logs pre-commit-install pre-commit-run security ci
 
 # Variables
 VENV := ../venv
@@ -9,6 +9,9 @@ ALEMBIC := $(VENV)/bin/alembic
 UVICORN := $(VENV)/bin/uvicorn
 BLACK := $(VENV)/bin/black
 FLAKE8 := $(VENV)/bin/flake8
+ISORT := $(VENV)/bin/isort
+BANDIT := $(VENV)/bin/bandit
+PRE_COMMIT := $(VENV)/bin/pre-commit
 
 # Default target
 help:
@@ -32,6 +35,12 @@ help:
 	@echo "  make test-cov         - Run tests with coverage"
 	@echo "  make lint             - Run flake8 linter"
 	@echo "  make format           - Format code with black"
+	@echo "  make security         - Run security checks (bandit, safety)"
+	@echo "  make ci               - Run all CI checks (lint, test, security)"
+	@echo ""
+	@echo "Pre-commit Commands:"
+	@echo "  make pre-commit-install  - Install pre-commit hooks"
+	@echo "  make pre-commit-run      - Run pre-commit on all files"
 	@echo ""
 	@echo "Database Migration Commands:"
 	@echo "  make migration-create MSG='description'  - Create new migration"
@@ -75,6 +84,37 @@ lint:
 
 format:
 	$(BLACK) app/ tests/ --line-length=88
+
+# Pre-commit commands
+pre-commit-install:
+	$(PRE_COMMIT) install
+	@echo "Pre-commit hooks installed successfully"
+
+pre-commit-run:
+	$(PRE_COMMIT) run --all-files
+
+# Security commands
+security:
+	@echo "Running security checks..."
+	@echo "\n=== Bandit Security Scan ==="
+	-$(BANDIT) -r app/ -ll || true
+	@echo "\n=== Safety Dependency Check ==="
+	-$(VENV)/bin/safety check || true
+
+# CI command (runs all checks like GitHub Actions)
+ci:
+	@echo "Running all CI checks..."
+	@echo "\n=== Linting with flake8 ==="
+	$(FLAKE8) app/ tests/ --max-line-length=120 --exclude=__pycache__,.venv,venv,alembic
+	@echo "\n=== Checking code format with black ==="
+	$(BLACK) --check app/ tests/ --line-length=88
+	@echo "\n=== Checking imports with isort ==="
+	$(ISORT) --check-only app/ tests/ --profile black
+	@echo "\n=== Running tests with coverage ==="
+	$(PYTEST) tests/ --cov=app --cov-report=term -v
+	@echo "\n=== Security checks ==="
+	-$(BANDIT) -r app/ -ll || true
+	@echo "\n✓ All CI checks complete!"
 
 # Database migration commands
 migration-create:

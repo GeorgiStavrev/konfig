@@ -1,19 +1,25 @@
 """Configuration endpoints."""
+
+import json
 from typing import List
 from uuid import UUID
-import json
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.base import get_db
-from app.models.tenant import Tenant
-from app.models.namespace import Namespace
-from app.models.config import Config, ConfigHistory, ConfigValueType
-from app.schemas.config import ConfigCreate, ConfigUpdate, ConfigResponse, ConfigHistoryResponse
 from app.api.dependencies import get_tenant_from_user_or_api_key
-from app.core.security import encrypt_value, decrypt_value
-
+from app.core.security import decrypt_value, encrypt_value
+from app.db.base import get_db
+from app.models.config import Config, ConfigHistory, ConfigValueType
+from app.models.namespace import Namespace
+from app.models.tenant import Tenant
+from app.schemas.config import (
+    ConfigCreate,
+    ConfigHistoryResponse,
+    ConfigResponse,
+    ConfigUpdate,
+)
 
 router = APIRouter(prefix="/namespaces/{namespace_id}/configs", tags=["configurations"])
 
@@ -35,14 +41,14 @@ def deserialize_value(value: str, value_type: ConfigValueType):
     if value_type == ConfigValueType.JSON:
         try:
             return json.loads(value)
-        except:
+        except (json.JSONDecodeError, ValueError):
             return value
     elif value_type == ConfigValueType.NUMBER:
         try:
             if "." in value:
                 return float(value)
             return int(value)
-        except:
+        except (ValueError, TypeError):
             return value
     else:
         return value
@@ -82,9 +88,7 @@ async def list_configs(
     await verify_namespace_access(namespace_id, current_tenant, db)
 
     # Get configs
-    result = await db.execute(
-        select(Config).where(Config.namespace_id == namespace_id)
-    )
+    result = await db.execute(select(Config).where(Config.namespace_id == namespace_id))
     configs = result.scalars().all()
 
     # Decrypt values
@@ -132,7 +136,11 @@ async def create_config(
         key=config_data.key,
         value=encrypted_value,
         value_type=config_data.value_type,
-        validation_schema=config_data.validation_schema.model_dump() if config_data.validation_schema else None,
+        validation_schema=(
+            config_data.validation_schema.model_dump()
+            if config_data.validation_schema
+            else None
+        ),
         description=config_data.description,
         is_secret="true" if config_data.is_secret else "false",
         version=1,

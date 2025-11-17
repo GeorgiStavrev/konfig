@@ -1,7 +1,7 @@
 """Custom SQLAlchemy types for cross-database compatibility."""
+
 from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.types import TypeDecorator
 
 
@@ -17,7 +17,7 @@ class JSONType(TypeDecorator):
 
     def load_dialect_impl(self, dialect):
         """Load the appropriate type based on the database dialect."""
-        if dialect.name == 'postgresql':
+        if dialect.name == "postgresql":
             return dialect.type_descriptor(JSONB())
         else:
             return dialect.type_descriptor(JSON())

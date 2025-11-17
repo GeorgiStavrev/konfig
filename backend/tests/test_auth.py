@@ -1,5 +1,5 @@
 """Tests for authentication endpoints."""
-import pytest
+
 from fastapi.testclient import TestClient
 
 
@@ -34,7 +34,7 @@ def test_login_success(client: TestClient, test_tenant_data):
     # Login
     login_data = {
         "email": test_tenant_data["email"],
-        "password": test_tenant_data["password"]
+        "password": test_tenant_data["password"],
     }
     response = client.post("/api/v1/auth/login", json=login_data)
     assert response.status_code == 200
@@ -50,19 +50,13 @@ def test_login_wrong_password(client: TestClient, test_tenant_data):
     client.post("/api/v1/auth/register", json=test_tenant_data)
 
     # Login with wrong password
-    login_data = {
-        "email": test_tenant_data["email"],
-        "password": "WrongPassword123!"
-    }
+    login_data = {"email": test_tenant_data["email"], "password": "WrongPassword123!"}
     response = client.post("/api/v1/auth/login", json=login_data)
     assert response.status_code == 401
 
 
 def test_login_nonexistent_user(client: TestClient):
     """Test login with non-existent user."""
-    login_data = {
-        "email": "nonexistent@example.com",
-        "password": "Password123!"
-    }
+    login_data = {"email": "nonexistent@example.com", "password": "Password123!"}
     response = client.post("/api/v1/auth/login", json=login_data)
     assert response.status_code == 401

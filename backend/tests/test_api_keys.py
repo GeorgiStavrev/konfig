@@ -1,6 +1,4 @@
 """Tests for API key management endpoints."""
-import pytest
-from fastapi.testclient import TestClient
 
 
 class TestAPIKeyManagement:
@@ -20,7 +18,9 @@ class TestAPIKeyManagement:
         assert api_key_response["scopes"] == test_api_key_data["scopes"]
         assert api_key_response["is_active"] is True
 
-    def test_member_cannot_create_api_keys(self, authenticated_member_client, test_api_key_data):
+    def test_member_cannot_create_api_keys(
+        self, authenticated_member_client, test_api_key_data
+    ):
         """Test that members cannot create API keys."""
         client, tokens = authenticated_member_client
 
@@ -81,15 +81,21 @@ class TestAPIKeyManagement:
         response = client.get(f"/api/v1/api-keys/{created_key['id']}")
         assert response.status_code == 404
 
-    def test_member_cannot_revoke_api_keys(self, client, test_user_registration_data, member_user_data, test_api_key_data):
+    def test_member_cannot_revoke_api_keys(
+        self, client, test_user_registration_data, member_user_data, test_api_key_data
+    ):
         """Test that members cannot revoke API keys."""
         # Register owner
-        response = client.post("/api/v1/auth/register", json=test_user_registration_data)
+        response = client.post(
+            "/api/v1/auth/register", json=test_user_registration_data
+        )
         assert response.status_code == 201
         owner_tokens = response.json()
 
         # Create an API key as owner
-        client.headers.update({"Authorization": f"Bearer {owner_tokens['access_token']}"})
+        client.headers.update(
+            {"Authorization": f"Bearer {owner_tokens['access_token']}"}
+        )
         response = client.post("/api/v1/api-keys", json=test_api_key_data)
         assert response.status_code == 201
         created_key = response.json()
@@ -102,14 +108,16 @@ class TestAPIKeyManagement:
         client.headers.clear()
         login_data = {
             "email": member_user_data["email"],
-            "password": member_user_data["password"]
+            "password": member_user_data["password"],
         }
         response = client.post("/api/v1/auth/login", json=login_data)
         assert response.status_code == 200
         member_tokens = response.json()
 
         # Try to revoke API key as member (should fail - members don't have permission)
-        client.headers.update({"Authorization": f"Bearer {member_tokens['access_token']}"})
+        client.headers.update(
+            {"Authorization": f"Bearer {member_tokens['access_token']}"}
+        )
         response = client.delete(f"/api/v1/api-keys/{created_key['id']}")
         assert response.status_code == 403
 
@@ -144,7 +152,7 @@ class TestAPIKeyManagement:
         api_key_data = {
             "name": "expiring_key",
             "scopes": "read",
-            "expires_at": expiration.isoformat()
+            "expires_at": expiration.isoformat(),
         }
 
         response = client.post("/api/v1/api-keys", json=api_key_data)
@@ -158,10 +166,7 @@ class TestAPIKeyManagement:
         client, tokens = authenticated_client
 
         # Read-only API key
-        readonly_key = {
-            "name": "readonly_key",
-            "scopes": "read"
-        }
+        readonly_key = {"name": "readonly_key", "scopes": "read"}
 
         response = client.post("/api/v1/api-keys", json=readonly_key)
         assert response.status_code == 201
@@ -169,10 +174,7 @@ class TestAPIKeyManagement:
         assert key["scopes"] == "read"
 
         # Read-write API key
-        readwrite_key = {
-            "name": "readwrite_key",
-            "scopes": "read,write"
-        }
+        readwrite_key = {"name": "readwrite_key", "scopes": "read,write"}
 
         response = client.post("/api/v1/api-keys", json=readwrite_key)
         assert response.status_code == 201
@@ -196,13 +198,6 @@ class TestAPIKeyManagement:
         client, api_key_response = api_key_client
 
         # API keys should not be able to create users
-        new_user = {
-            "email": "newuser@example.com",
-            "password": "NewPassword123!",
-            "full_name": "New User",
-            "role": "member"
-        }
-
         # This would fail because we need to update the user endpoints
         # to not accept API key auth, or handle it differently
         # For now, this test documents expected behavior

@@ -1,6 +1,4 @@
 """Tests for user management endpoints."""
-import pytest
-from fastapi.testclient import TestClient
 
 
 class TestUserManagement:
@@ -26,7 +24,7 @@ class TestUserManagement:
             "email": "admin@example.com",
             "password": "AdminPassword123!",
             "full_name": "Admin User",
-            "role": "admin"
+            "role": "admin",
         }
 
         response = client.post("/api/v1/users", json=new_user)
@@ -46,7 +44,7 @@ class TestUserManagement:
             "email": "owner@example.com",  # Same as owner
             "password": "TestPassword123!",
             "full_name": "Duplicate User",
-            "role": "member"
+            "role": "member",
         }
 
         response = client.post("/api/v1/users", json=new_user)
@@ -66,7 +64,7 @@ class TestUserManagement:
             "email": "newowner@example.com",
             "password": "OwnerPassword123!",
             "full_name": "New Owner",
-            "role": "owner"
+            "role": "owner",
         }
 
         response = client.post("/api/v1/users", json=new_user)
@@ -81,7 +79,7 @@ class TestUserManagement:
             "email": "newmember@example.com",
             "password": "MemberPassword123!",
             "full_name": "New Member",
-            "role": "member"
+            "role": "member",
         }
 
         response = client.post("/api/v1/users", json=new_user)
@@ -101,7 +99,9 @@ class TestUserManagement:
         assert user["id"] == user_id
         assert user["email"] == "owner@example.com"
 
-    def test_get_user_from_different_tenant_fails(self, authenticated_client, client, test_user_registration_data):
+    def test_get_user_from_different_tenant_fails(
+        self, authenticated_client, client, test_user_registration_data
+    ):
         """Test that users can only access users in their own tenant."""
         client1, tokens1 = authenticated_client
 
@@ -110,7 +110,7 @@ class TestUserManagement:
             "tenant_name": "other_company",
             "email": "other@example.com",
             "password": "OtherPassword123!",
-            "full_name": "Other Owner"
+            "full_name": "Other Owner",
         }
         response = client.post("/api/v1/auth/register", json=other_tenant_data)
         assert response.status_code == 201
@@ -119,16 +119,16 @@ class TestUserManagement:
         # Try to get user from tenant 2 using tenant 1's auth
         user2_id = tokens2["user"]["id"]
         response = client1.get(f"/api/v1/users/{user2_id}")
-        assert response.status_code == 404  # Not found (because it's in a different tenant)
+        assert (
+            response.status_code == 404
+        )  # Not found (because it's in a different tenant)
 
     def test_update_own_profile(self, authenticated_client):
         """Test that users can update their own profile."""
         client, tokens = authenticated_client
 
         user_id = tokens["user"]["id"]
-        update_data = {
-            "full_name": "Updated Owner Name"
-        }
+        update_data = {"full_name": "Updated Owner Name"}
 
         response = client.put(f"/api/v1/users/{user_id}", json=update_data)
         assert response.status_code == 200
@@ -141,11 +141,9 @@ class TestUserManagement:
         client, tokens = authenticated_client
 
         user_id = tokens["user"]["id"]
-        update_data = {
-            "role": "member"  # Try to demote self
-        }
+        update_data = {"role": "member"}  # Try to demote self
 
-        response = client.put(f"/api/v1/users/{user_id}", json=update_data)
+        client.put(f"/api/v1/users/{user_id}", json=update_data)
         # Owners can change roles, so this should succeed
         # But they can't demote themselves if they're the last owner
         # Let's test the deactivation instead
@@ -155,33 +153,36 @@ class TestUserManagement:
         client, tokens = authenticated_client
 
         user_id = tokens["user"]["id"]
-        update_data = {
-            "is_active": False
-        }
+        update_data = {"is_active": False}
 
         response = client.put(f"/api/v1/users/{user_id}", json=update_data)
         assert response.status_code == 400
         assert "cannot deactivate yourself" in response.json()["detail"].lower()
 
-    def test_member_cannot_change_roles(self, client, test_user_registration_data, member_user_data):
+    def test_member_cannot_change_roles(
+        self, client, test_user_registration_data, member_user_data
+    ):
         """Test that members cannot change user roles."""
         # Register owner
-        response = client.post("/api/v1/auth/register", json=test_user_registration_data)
+        response = client.post(
+            "/api/v1/auth/register", json=test_user_registration_data
+        )
         assert response.status_code == 201
         owner_tokens = response.json()
 
         # Create member user
-        client.headers.update({"Authorization": f"Bearer {owner_tokens['access_token']}"})
+        client.headers.update(
+            {"Authorization": f"Bearer {owner_tokens['access_token']}"}
+        )
         response = client.post("/api/v1/users", json=member_user_data)
         assert response.status_code == 201
-        member_user = response.json()
 
         # Create another user that the member will try to modify
         another_user_data = {
             "email": "another@example.com",
             "password": "AnotherPassword123!",
             "full_name": "Another User",
-            "role": "admin"
+            "role": "admin",
         }
         response = client.post("/api/v1/users", json=another_user_data)
         assert response.status_code == 201
@@ -191,17 +192,17 @@ class TestUserManagement:
         client.headers.clear()
         login_data = {
             "email": member_user_data["email"],
-            "password": member_user_data["password"]
+            "password": member_user_data["password"],
         }
         response = client.post("/api/v1/auth/login", json=login_data)
         assert response.status_code == 200
         member_tokens = response.json()
 
         # Try to change another user's role as member
-        client.headers.update({"Authorization": f"Bearer {member_tokens['access_token']}"})
-        update_data = {
-            "role": "member"
-        }
+        client.headers.update(
+            {"Authorization": f"Bearer {member_tokens['access_token']}"}
+        )
+        update_data = {"role": "member"}
 
         response = client.put(f"/api/v1/users/{another_user['id']}", json=update_data)
         assert response.status_code == 403
@@ -215,7 +216,7 @@ class TestUserManagement:
             "email": "todelete@example.com",
             "password": "DeletePassword123!",
             "full_name": "To Delete",
-            "role": "member"
+            "role": "member",
         }
 
         response = client.post("/api/v1/users", json=new_user)
@@ -252,7 +253,7 @@ class TestUserManagement:
             "email": "owner2@example.com",
             "password": "Owner2Password123!",
             "full_name": "Owner Two",
-            "role": "owner"
+            "role": "owner",
         }
 
         response = client.post("/api/v1/users", json=new_owner)

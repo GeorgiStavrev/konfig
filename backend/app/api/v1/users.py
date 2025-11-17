@@ -1,21 +1,22 @@
 """User management endpoints."""
+
 from typing import List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
-from app.db.base import get_db
-from app.models.user import User, UserRole
-from app.models.tenant import Tenant
-from app.schemas.user import UserCreate, UserUpdate, UserResponse
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.dependencies import (
     get_current_user,
     get_tenant_from_user,
     require_role,
 )
 from app.core.security import get_password_hash
-
+from app.db.base import get_db
+from app.models.tenant import Tenant
+from app.models.user import User, UserRole
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -249,7 +250,7 @@ async def delete_user(
         select(User).where(
             User.tenant_id == tenant.id,
             User.role == UserRole.OWNER,
-            User.is_active == True
+            User.is_active.is_(True),
         )
     )
     active_owners = result.scalars().all()

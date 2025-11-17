@@ -1,8 +1,10 @@
 """Tenant schemas."""
+
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TenantBase(BaseModel):
@@ -31,6 +33,6 @@ class TenantResponse(TenantBase):
     @classmethod
     def model_validate(cls, obj):
         """Custom validation to handle string to bool conversion."""
-        if hasattr(obj, 'is_active') and isinstance(obj.is_active, str):
+        if hasattr(obj, "is_active") and isinstance(obj.is_active, str):
             obj.is_active = obj.is_active == "true"
         return super().model_validate(obj)

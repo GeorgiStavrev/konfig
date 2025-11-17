@@ -1,9 +1,11 @@
 """Configuration schemas."""
-from datetime import datetime
-from typing import Optional, Any, Dict, List
-from uuid import UUID
-from pydantic import BaseModel, Field, field_validator
+
 import json
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.config import ConfigValueType
 

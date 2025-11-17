@@ -3,11 +3,12 @@
 These tests are meant to be run against a live instance of the application.
 Run with: pytest tests/test_e2e.py -v
 """
-import pytest
-import requests
+
 import time
 from typing import Dict, Tuple
 
+import pytest
+import requests
 
 # Base URL for the API
 BASE_URL = "http://localhost:8000"
@@ -43,7 +44,7 @@ def test_tenant(wait_for_api) -> Tuple[Dict, str]:
         "tenant_name": f"e2e_test_company_{int(time.time())}",
         "email": f"e2e_test_{int(time.time())}@example.com",
         "password": "E2ETestPassword123!",
-        "full_name": "E2E Test Owner"
+        "full_name": "E2E Test Owner",
     }
 
     # Register
@@ -72,7 +73,7 @@ def test_e2e_authentication_flow(wait_for_api):
         "tenant_name": f"auth_test_{int(time.time())}",
         "email": f"auth_test_{int(time.time())}@example.com",
         "password": "TestPassword123!",
-        "full_name": "Auth Test Owner"
+        "full_name": "Auth Test Owner",
     }
 
     response = requests.post(f"{API_BASE}/auth/register", json=tenant_data)
@@ -82,10 +83,7 @@ def test_e2e_authentication_flow(wait_for_api):
     assert registered_response["user"]["email"] == tenant_data["email"]
 
     # Login
-    login_data = {
-        "email": tenant_data["email"],
-        "password": tenant_data["password"]
-    }
+    login_data = {"email": tenant_data["email"], "password": tenant_data["password"]}
     response = requests.post(f"{API_BASE}/auth/login", json=login_data)
     assert response.status_code == 200
     token_data = response.json()
@@ -94,10 +92,7 @@ def test_e2e_authentication_flow(wait_for_api):
     assert token_data["token_type"] == "bearer"
 
     # Try wrong password
-    wrong_login = {
-        "email": tenant_data["email"],
-        "password": "WrongPassword"
-    }
+    wrong_login = {"email": tenant_data["email"], "password": "WrongPassword"}
     response = requests.post(f"{API_BASE}/auth/login", json=wrong_login)
     assert response.status_code == 401
 
@@ -110,9 +105,11 @@ def test_e2e_namespace_crud(test_tenant):
     # Create namespace
     namespace_data = {
         "name": f"e2e_namespace_{int(time.time())}",
-        "description": "E2E test namespace"
+        "description": "E2E test namespace",
     }
-    response = requests.post(f"{API_BASE}/namespaces", json=namespace_data, headers=headers)
+    response = requests.post(
+        f"{API_BASE}/namespaces", json=namespace_data, headers=headers
+    )
     assert response.status_code == 201
     namespace = response.json()
     namespace_id = namespace["id"]
@@ -132,10 +129,10 @@ def test_e2e_namespace_crud(test_tenant):
     assert fetched_namespace["id"] == namespace_id
 
     # Update namespace
-    update_data = {
-        "description": "Updated description"
-    }
-    response = requests.put(f"{API_BASE}/namespaces/{namespace_id}", json=update_data, headers=headers)
+    update_data = {"description": "Updated description"}
+    response = requests.put(
+        f"{API_BASE}/namespaces/{namespace_id}", json=update_data, headers=headers
+    )
     assert response.status_code == 200
     updated_namespace = response.json()
     assert updated_namespace["description"] == update_data["description"]
@@ -157,9 +154,11 @@ def test_e2e_config_crud(test_tenant):
     # Create namespace
     namespace_data = {
         "name": f"config_test_ns_{int(time.time())}",
-        "description": "Config test namespace"
+        "description": "Config test namespace",
     }
-    response = requests.post(f"{API_BASE}/namespaces", json=namespace_data, headers=headers)
+    response = requests.post(
+        f"{API_BASE}/namespaces", json=namespace_data, headers=headers
+    )
     namespace_id = response.json()["id"]
 
     # Create string config
@@ -168,12 +167,12 @@ def test_e2e_config_crud(test_tenant):
         "value": "My Application",
         "value_type": "string",
         "description": "Application name",
-        "is_secret": False
+        "is_secret": False,
     }
     response = requests.post(
         f"{API_BASE}/namespaces/{namespace_id}/configs",
         json=config_data,
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 201
     config = response.json()
@@ -183,8 +182,7 @@ def test_e2e_config_crud(test_tenant):
 
     # List configs
     response = requests.get(
-        f"{API_BASE}/namespaces/{namespace_id}/configs",
-        headers=headers
+        f"{API_BASE}/namespaces/{namespace_id}/configs", headers=headers
     )
     assert response.status_code == 200
     configs = response.json()
@@ -192,21 +190,18 @@ def test_e2e_config_crud(test_tenant):
 
     # Get config
     response = requests.get(
-        f"{API_BASE}/namespaces/{namespace_id}/configs/app_name",
-        headers=headers
+        f"{API_BASE}/namespaces/{namespace_id}/configs/app_name", headers=headers
     )
     assert response.status_code == 200
     fetched_config = response.json()
     assert fetched_config["key"] == "app_name"
 
     # Update config
-    update_data = {
-        "value": "Updated Application Name"
-    }
+    update_data = {"value": "Updated Application Name"}
     response = requests.put(
         f"{API_BASE}/namespaces/{namespace_id}/configs/app_name",
         json=update_data,
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 200
     updated_config = response.json()
@@ -215,8 +210,7 @@ def test_e2e_config_crud(test_tenant):
 
     # Delete config
     response = requests.delete(
-        f"{API_BASE}/namespaces/{namespace_id}/configs/app_name",
-        headers=headers
+        f"{API_BASE}/namespaces/{namespace_id}/configs/app_name", headers=headers
     )
     assert response.status_code == 204
 
@@ -229,9 +223,11 @@ def test_e2e_config_types(test_tenant):
     # Create namespace
     namespace_data = {
         "name": f"types_test_ns_{int(time.time())}",
-        "description": "Config types test"
+        "description": "Config types test",
     }
-    response = requests.post(f"{API_BASE}/namespaces", json=namespace_data, headers=headers)
+    response = requests.post(
+        f"{API_BASE}/namespaces", json=namespace_data, headers=headers
+    )
     namespace_id = response.json()["id"]
 
     # Test string type
@@ -239,12 +235,12 @@ def test_e2e_config_types(test_tenant):
         "key": "string_config",
         "value": "test string",
         "value_type": "string",
-        "is_secret": False
+        "is_secret": False,
     }
     response = requests.post(
         f"{API_BASE}/namespaces/{namespace_id}/configs",
         json=string_config,
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 201
 
@@ -253,12 +249,12 @@ def test_e2e_config_types(test_tenant):
         "key": "number_config",
         "value": 42,
         "value_type": "number",
-        "is_secret": False
+        "is_secret": False,
     }
     response = requests.post(
         f"{API_BASE}/namespaces/{namespace_id}/configs",
         json=number_config,
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 201
 
@@ -267,35 +263,27 @@ def test_e2e_config_types(test_tenant):
         "key": "select_config",
         "value": "option1",
         "value_type": "select",
-        "validation_schema": {
-            "options": ["option1", "option2", "option3"]
-        },
-        "is_secret": False
+        "validation_schema": {"options": ["option1", "option2", "option3"]},
+        "is_secret": False,
     }
     response = requests.post(
         f"{API_BASE}/namespaces/{namespace_id}/configs",
         json=select_config,
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 201
 
     # Test JSON type
     json_config = {
         "key": "json_config",
-        "value": {
-            "nested": {
-                "key": "value"
-            },
-            "array": [1, 2, 3],
-            "boolean": True
-        },
+        "value": {"nested": {"key": "value"}, "array": [1, 2, 3], "boolean": True},
         "value_type": "json",
-        "is_secret": False
+        "is_secret": False,
     }
     response = requests.post(
         f"{API_BASE}/namespaces/{namespace_id}/configs",
         json=json_config,
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 201
     created_json = response.json()
@@ -311,9 +299,11 @@ def test_e2e_config_history(test_tenant):
     # Create namespace
     namespace_data = {
         "name": f"history_test_ns_{int(time.time())}",
-        "description": "History test"
+        "description": "History test",
     }
-    response = requests.post(f"{API_BASE}/namespaces", json=namespace_data, headers=headers)
+    response = requests.post(
+        f"{API_BASE}/namespaces", json=namespace_data, headers=headers
+    )
     namespace_id = response.json()["id"]
 
     # Create config
@@ -321,12 +311,12 @@ def test_e2e_config_history(test_tenant):
         "key": "versioned_config",
         "value": "version 1",
         "value_type": "string",
-        "is_secret": False
+        "is_secret": False,
     }
     response = requests.post(
         f"{API_BASE}/namespaces/{namespace_id}/configs",
         json=config_data,
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 201
 
@@ -336,14 +326,14 @@ def test_e2e_config_history(test_tenant):
         response = requests.put(
             f"{API_BASE}/namespaces/{namespace_id}/configs/versioned_config",
             json=update_data,
-            headers=headers
+            headers=headers,
         )
         assert response.status_code == 200
 
     # Get history
     response = requests.get(
         f"{API_BASE}/namespaces/{namespace_id}/configs/versioned_config/history",
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 200
     history = response.json()
@@ -360,9 +350,11 @@ def test_e2e_secret_configs(test_tenant):
     # Create namespace
     namespace_data = {
         "name": f"secret_test_ns_{int(time.time())}",
-        "description": "Secret test"
+        "description": "Secret test",
     }
-    response = requests.post(f"{API_BASE}/namespaces", json=namespace_data, headers=headers)
+    response = requests.post(
+        f"{API_BASE}/namespaces", json=namespace_data, headers=headers
+    )
     namespace_id = response.json()["id"]
 
     # Create secret config
@@ -370,12 +362,12 @@ def test_e2e_secret_configs(test_tenant):
         "key": "database_password",
         "value": "SuperSecretPassword123!",
         "value_type": "string",
-        "is_secret": True
+        "is_secret": True,
     }
     response = requests.post(
         f"{API_BASE}/namespaces/{namespace_id}/configs",
         json=secret_data,
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 201
     created_secret = response.json()
@@ -384,7 +376,7 @@ def test_e2e_secret_configs(test_tenant):
     # Retrieve secret - should still return the value (encryption is transparent)
     response = requests.get(
         f"{API_BASE}/namespaces/{namespace_id}/configs/database_password",
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 200
     fetched_secret = response.json()
@@ -399,7 +391,7 @@ def test_e2e_multi_tenant_isolation(wait_for_api):
         "tenant_name": f"tenant1_{int(time.time())}",
         "email": f"tenant1_{int(time.time())}@example.com",
         "password": "Password123!",
-        "full_name": "Tenant 1 Owner"
+        "full_name": "Tenant 1 Owner",
     }
     response = requests.post(f"{API_BASE}/auth/register", json=tenant1_data)
     assert response.status_code == 201
@@ -409,9 +401,11 @@ def test_e2e_multi_tenant_isolation(wait_for_api):
     # Create namespace for tenant 1
     namespace_data = {
         "name": f"tenant1_ns_{int(time.time())}",
-        "description": "Tenant 1 namespace"
+        "description": "Tenant 1 namespace",
     }
-    response = requests.post(f"{API_BASE}/namespaces", json=namespace_data, headers=headers1)
+    response = requests.post(
+        f"{API_BASE}/namespaces", json=namespace_data, headers=headers1
+    )
     namespace1_id = response.json()["id"]
 
     # Create config for tenant 1
@@ -419,12 +413,12 @@ def test_e2e_multi_tenant_isolation(wait_for_api):
         "key": "tenant1_secret",
         "value": "tenant1_secret_value",
         "value_type": "string",
-        "is_secret": True
+        "is_secret": True,
     }
     requests.post(
         f"{API_BASE}/namespaces/{namespace1_id}/configs",
         json=config_data,
-        headers=headers1
+        headers=headers1,
     )
 
     # Create second tenant
@@ -432,7 +426,7 @@ def test_e2e_multi_tenant_isolation(wait_for_api):
         "tenant_name": f"tenant2_{int(time.time())}",
         "email": f"tenant2_{int(time.time())}@example.com",
         "password": "Password123!",
-        "full_name": "Tenant 2 Owner"
+        "full_name": "Tenant 2 Owner",
     }
     response = requests.post(f"{API_BASE}/auth/register", json=tenant2_data)
     assert response.status_code == 201
@@ -446,7 +440,7 @@ def test_e2e_multi_tenant_isolation(wait_for_api):
     # Try to access tenant1's config with tenant2's token
     response = requests.get(
         f"{API_BASE}/namespaces/{namespace1_id}/configs/tenant1_secret",
-        headers=headers2
+        headers=headers2,
     )
     assert response.status_code == 404
 

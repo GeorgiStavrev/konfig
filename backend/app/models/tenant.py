@@ -1,7 +1,9 @@
 """Tenant model."""
+
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Boolean
+
+from sqlalchemy import Boolean, Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -23,8 +25,12 @@ class Tenant(Base):
 
     # Relationships
     users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
-    api_keys = relationship("ApiKey", back_populates="tenant", cascade="all, delete-orphan")
-    namespaces = relationship("Namespace", back_populates="tenant", cascade="all, delete-orphan")
+    api_keys = relationship(
+        "ApiKey", back_populates="tenant", cascade="all, delete-orphan"
+    )
+    namespaces = relationship(
+        "Namespace", back_populates="tenant", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Tenant {self.name}>"

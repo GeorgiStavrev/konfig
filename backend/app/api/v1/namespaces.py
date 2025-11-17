@@ -1,16 +1,17 @@
 """Namespace endpoints."""
+
 from typing import List
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.base import get_db
-from app.models.tenant import Tenant
-from app.models.namespace import Namespace
-from app.schemas.namespace import NamespaceCreate, NamespaceUpdate, NamespaceResponse
 from app.api.dependencies import get_tenant_from_user_or_api_key
-
+from app.db.base import get_db
+from app.models.namespace import Namespace
+from app.models.tenant import Tenant
+from app.schemas.namespace import NamespaceCreate, NamespaceResponse, NamespaceUpdate
 
 router = APIRouter(prefix="/namespaces", tags=["namespaces"])
 

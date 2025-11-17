@@ -1,20 +1,22 @@
 """Authentication endpoints."""
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+
 import logging
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import settings
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    get_password_hash,
+    verify_password,
+)
 from app.db.base import get_db
 from app.models.tenant import Tenant
 from app.models.user import User, UserRole
-from app.schemas.user import UserRegister, UserLogin, UserResponse, TokenResponse
-from app.core.security import (
-    get_password_hash,
-    verify_password,
-    create_access_token,
-    create_refresh_token,
-)
-from app.core.config import settings
+from app.schemas.user import TokenResponse, UserLogin, UserRegister, UserResponse
 
 # Configure logging
 logging.basicConfig(
@@ -26,7 +28,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(
     user_data: UserRegister,
     db: AsyncSession = Depends(get_db),
@@ -46,7 +50,9 @@ async def register(
         )
 
     # Check if tenant with name already exists
-    result = await db.execute(select(Tenant).where(Tenant.name == user_data.tenant_name))
+    result = await db.execute(
+        select(Tenant).where(Tenant.name == user_data.tenant_name)
+    )
     existing_tenant = result.scalar_one_or_none()
 
     if existing_tenant:

@@ -1,5 +1,5 @@
 """Tests for namespace endpoints."""
-import pytest
+
 from fastapi.testclient import TestClient
 
 
@@ -14,7 +14,9 @@ def test_create_namespace(client: TestClient, test_tenant_data, test_namespace_d
     token = register_and_login(client, test_tenant_data)
     headers = {"Authorization": f"Bearer {token}"}
 
-    response = client.post("/api/v1/namespaces", json=test_namespace_data, headers=headers)
+    response = client.post(
+        "/api/v1/namespaces", json=test_namespace_data, headers=headers
+    )
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == test_namespace_data["name"]
@@ -28,7 +30,9 @@ def test_create_namespace_without_auth(client: TestClient, test_namespace_data):
     assert response.status_code == 401  # No auth header - unauthorized
 
 
-def test_create_duplicate_namespace(client: TestClient, test_tenant_data, test_namespace_data):
+def test_create_duplicate_namespace(
+    client: TestClient, test_tenant_data, test_namespace_data
+):
     """Test creating namespace with duplicate name."""
     token = register_and_login(client, test_tenant_data)
     headers = {"Authorization": f"Bearer {token}"}
@@ -37,7 +41,9 @@ def test_create_duplicate_namespace(client: TestClient, test_tenant_data, test_n
     client.post("/api/v1/namespaces", json=test_namespace_data, headers=headers)
 
     # Try to create duplicate
-    response = client.post("/api/v1/namespaces", json=test_namespace_data, headers=headers)
+    response = client.post(
+        "/api/v1/namespaces", json=test_namespace_data, headers=headers
+    )
     assert response.status_code == 400
     assert "already exists" in response.json()["detail"].lower()
 
@@ -65,7 +71,9 @@ def test_get_namespace(client: TestClient, test_tenant_data, test_namespace_data
     headers = {"Authorization": f"Bearer {token}"}
 
     # Create namespace
-    create_response = client.post("/api/v1/namespaces", json=test_namespace_data, headers=headers)
+    create_response = client.post(
+        "/api/v1/namespaces", json=test_namespace_data, headers=headers
+    )
     namespace_id = create_response.json()["id"]
 
     # Get namespace
@@ -82,7 +90,9 @@ def test_get_nonexistent_namespace(client: TestClient, test_tenant_data):
     headers = {"Authorization": f"Bearer {token}"}
 
     # Use a random UUID
-    response = client.get("/api/v1/namespaces/00000000-0000-0000-0000-000000000000", headers=headers)
+    response = client.get(
+        "/api/v1/namespaces/00000000-0000-0000-0000-000000000000", headers=headers
+    )
     assert response.status_code == 404
 
 
@@ -92,15 +102,16 @@ def test_update_namespace(client: TestClient, test_tenant_data, test_namespace_d
     headers = {"Authorization": f"Bearer {token}"}
 
     # Create namespace
-    create_response = client.post("/api/v1/namespaces", json=test_namespace_data, headers=headers)
+    create_response = client.post(
+        "/api/v1/namespaces", json=test_namespace_data, headers=headers
+    )
     namespace_id = create_response.json()["id"]
 
     # Update namespace
-    update_data = {
-        "name": "updated_namespace",
-        "description": "Updated description"
-    }
-    response = client.put(f"/api/v1/namespaces/{namespace_id}", json=update_data, headers=headers)
+    update_data = {"name": "updated_namespace", "description": "Updated description"}
+    response = client.put(
+        f"/api/v1/namespaces/{namespace_id}", json=update_data, headers=headers
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == update_data["name"]
@@ -113,7 +124,9 @@ def test_delete_namespace(client: TestClient, test_tenant_data, test_namespace_d
     headers = {"Authorization": f"Bearer {token}"}
 
     # Create namespace
-    create_response = client.post("/api/v1/namespaces", json=test_namespace_data, headers=headers)
+    create_response = client.post(
+        "/api/v1/namespaces", json=test_namespace_data, headers=headers
+    )
     namespace_id = create_response.json()["id"]
 
     # Delete namespace
@@ -132,7 +145,9 @@ def test_namespace_isolation(client: TestClient, test_tenant_data):
     headers1 = {"Authorization": f"Bearer {token1}"}
 
     namespace_data = {"name": "tenant1_namespace", "description": "Tenant 1"}
-    create_response = client.post("/api/v1/namespaces", json=namespace_data, headers=headers1)
+    create_response = client.post(
+        "/api/v1/namespaces", json=namespace_data, headers=headers1
+    )
     namespace_id = create_response.json()["id"]
 
     # Create second tenant
@@ -140,7 +155,7 @@ def test_namespace_isolation(client: TestClient, test_tenant_data):
         "tenant_name": "tenant2",
         "email": "tenant2@example.com",
         "password": "Password123!",
-        "full_name": "Tenant 2 Owner"
+        "full_name": "Tenant 2 Owner",
     }
     token2 = register_and_login(client, tenant2_data)
     headers2 = {"Authorization": f"Bearer {token2}"}

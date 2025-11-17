@@ -1,24 +1,23 @@
 """API Key management endpoints."""
+
 import secrets
 from typing import List
 from uuid import UUID
-from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
-from app.db.base import get_db
-from app.models.user import User, UserRole
-from app.models.tenant import Tenant
-from app.models.api_key import ApiKey
-from app.schemas.api_key import ApiKeyCreate, ApiKeyResponse, ApiKeyCreatedResponse
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.dependencies import (
-    get_current_user,
     get_tenant_from_user,
     require_role,
 )
 from app.core.security import get_password_hash
-
+from app.db.base import get_db
+from app.models.api_key import ApiKey
+from app.models.tenant import Tenant
+from app.models.user import User, UserRole
+from app.schemas.api_key import ApiKeyCreate, ApiKeyCreatedResponse, ApiKeyResponse
 
 router = APIRouter(prefix="/api-keys", tags=["api-keys"])
 
@@ -52,7 +51,9 @@ async def list_api_keys(
     return [ApiKeyResponse.model_validate(key) for key in api_keys]
 
 
-@router.post("", response_model=ApiKeyCreatedResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=ApiKeyCreatedResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_api_key(
     key_data: ApiKeyCreate,
     current_user: User = Depends(require_role(UserRole.ADMIN)),

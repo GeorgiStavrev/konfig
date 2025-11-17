@@ -1,16 +1,17 @@
 """Security utilities for authentication and encryption."""
-from datetime import datetime, timedelta
-from typing import Optional
+
 import base64
 import hashlib
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from typing import Optional
+
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
 from app.core.config import settings
-
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -24,10 +25,10 @@ def _prehash_password(password: str) -> str:
     we first hash with SHA256, then use bcrypt on the result.
     """
     # Hash the password with SHA256 and encode as base64
-    password_bytes = password.encode('utf-8')
+    password_bytes = password.encode("utf-8")
     sha256_hash = hashlib.sha256(password_bytes).digest()
     # Encode as base64 to get a string that bcrypt can work with
-    return base64.b64encode(sha256_hash).decode('utf-8')
+    return base64.b64encode(sha256_hash).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
